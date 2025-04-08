@@ -1,7 +1,7 @@
 mod apic;
 mod consts;
-// mod clock;
-// mod serial;
+pub mod clock;
+mod serial;
 mod exceptions;
 
 use apic::*;
@@ -13,8 +13,8 @@ lazy_static! {
         let mut idt = InterruptDescriptorTable::new();
         unsafe {
             exceptions::register_idt(&mut idt);
-            // TODO: clock::register_idt(&mut idt);
-            // TODO: serial::register_idt(&mut idt);
+            clock::register_idt(&mut idt);
+            serial::register_idt(&mut idt);
         }
         idt
     };
@@ -25,9 +25,16 @@ pub fn init() {
     IDT.load();
 
     // FIXME: check and init APIC
-
+    if XApic::support() {
+        unsafe {
+            let mut xapic = XApic::new(physical_to_virtual(LAPIC_ADDR));
+            xapic.cpu_init();
+        }
+    } else {
+        panic!("xAPIC not supported on this CPU.");
+    }
     // FIXME: enable serial irq with IO APIC (use enable_irq)
-
+    enable_irq(consts::Irq::Serial0 as u8 , 0);
     info!("Interrupts Initialized.");
 }
 

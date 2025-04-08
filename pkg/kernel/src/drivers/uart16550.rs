@@ -55,6 +55,8 @@ impl SerialPort {
 
             // normal mode
             Port::<u8>::new(self.base_port + 4).write(0x0F);
+
+            ier.write(0x01); // 开中断
         }
     }
 
@@ -94,4 +96,8 @@ impl fmt::Write for SerialPort {
         }
         Ok(())
     }
+}
+
+pub fn backspace() {
+    print!("\x08\x20\x08");
 }
