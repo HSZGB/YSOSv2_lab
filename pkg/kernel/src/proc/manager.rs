@@ -4,7 +4,7 @@ use crate::memory::{
     allocator::{ALLOCATOR, HEAP_SIZE},
     get_frame_alloc_for_sure, PAGE_SIZE,
 };
-use alloc::{collections::*, format};
+use alloc::{collections::*, format, sync::Arc};
 use spin::{Mutex, RwLock};
 
 pub static PROCESS_MANAGER: spin::Once<ProcessManager> = spin::Once::new();
@@ -12,8 +12,10 @@ pub static PROCESS_MANAGER: spin::Once<ProcessManager> = spin::Once::new();
 pub fn init(init: Arc<Process>) {
 
     // FIXME: set init process as Running
+    init.write().resume();
 
     // FIXME: set processor's current pid to init's pid
+    processor::set_pid(init.pid());
 
     PROCESS_MANAGER.call_once(|| ProcessManager::new(init));
 }
@@ -66,22 +68,37 @@ impl ProcessManager {
 
     pub fn save_current(&self, context: &ProcessContext) {
         // FIXME: update current process's tick count
+        self.current().write().tick();
 
         // FIXME: save current process's context
+        self.current().write().save(context);
     }
 
     pub fn switch_next(&self, context: &mut ProcessContext) -> ProcessId {
 
-        // FIXME: fetch the next process from ready queue
+        // 如何使这一函数的功能仅限于“切换到下一个进程”
+        //
 
+        let mut ready_queue = self.ready_queue.lock();
+        
+        // 死循环了这里
+
+        // FIXME: fetch the next process from ready queue
         // FIXME: check if the next process is ready,
         //        continue to fetch if not ready
-
-        // FIXME: restore next process's context
-
-        // FIXME: update processor's current pid
-
-        // FIXME: return next process's pid
+        if let Some(next_pid) = ready_queue.pop_front() {
+            if let Some(next_proc) = self.get_proc(&next_pid) {
+                if next_proc.read().status() == ProgramStatus::Ready {
+                    // FIXME: restore next process's context
+                    next_proc.write().restore(context);
+                    // FIXME: update processor's current pid
+                    processor::set_pid(next_pid);
+                    // FIXME: return next process's pid
+                    return next_pid;
+                }
+            }
+        }
+        get_pid()
     }
 
     pub fn spawn_kernel_thread(
@@ -95,16 +112,21 @@ impl ProcessManager {
         let proc_vm = Some(ProcessVm::new(page_table));
         let proc = Process::new(name, Some(Arc::downgrade(&kproc)), proc_vm, proc_data);
 
+        let pid = proc.pid();
         // alloc stack for the new process base on pid
         let stack_top = proc.alloc_init_stack();
 
         // FIXME: set the stack frame
+        proc.write().init_stack_frame(entry, stack_top);
 
         // FIXME: add to process map
+        self.add_proc(pid, proc);
 
         // FIXME: push to ready queue
+        self.push_ready(pid);
 
         // FIXME: return new process pid
+        pid
     }
 
     pub fn kill_current(&self, ret: isize) {
@@ -154,4 +176,13 @@ impl ProcessManager {
 
         print!("{}", output);
     }
+
+    pub fn get_exit_code(&self, pid: ProcessId) -> Option<isize> {
+        x86_64::instructions::interrupts::without_interrupts(|| {
+            self.get_proc(&pid).and_then(|proc| proc.read().exit_code())
+        })
+        // 如果该值为 None，则说明进程还没有退出
+        // 如果该值为 Some，则说明进程已经退出，可以获取到进程的返回值。
+    }
+
 }

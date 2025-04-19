@@ -1,13 +1,19 @@
 mod context;
 mod data;
-mod manager;
+pub mod manager;
 mod paging;
 mod pid;
 mod process;
 mod processor;
 
+mod vm;
+
+
 use manager::*;
 use process::*;
+use processor::get_pid;
+use vm::ProcessVm;
+use x86::current;
 use crate::memory::PAGE_SIZE;
 
 use alloc::string::String;
@@ -35,7 +41,12 @@ pub fn init() {
     trace!("Init kernel vm: {:#?}", proc_vm);
 
     // kernel process
-    let kproc = { /* FIXME: create kernel process */ };
+    let kproc = Process::new(
+        String::from("kernel"),
+        None,
+        Some(proc_vm),
+        None, // ???
+    );
     manager::init(kproc);
 
     info!("Process Manager Initialized.");
@@ -44,9 +55,16 @@ pub fn init() {
 pub fn switch(context: &mut ProcessContext) {
     x86_64::instructions::interrupts::without_interrupts(|| {
         // FIXME: switch to the next process
-        //      - save current process's context
+        //      - save current process's context && update status
+        let manager = get_process_manager();
+        manager.save_current(context);
+        
         //      - handle ready queue update
+        manager.push_ready(get_pid()); // ??
+        
         //      - restore next process's context
+        manager.switch_next(context);
+        // debug!("hello");
     });
 }
 
@@ -66,6 +84,7 @@ pub fn print_process_list() {
 pub fn env(key: &str) -> Option<String> {
     x86_64::instructions::interrupts::without_interrupts(|| {
         // FIXME: get current process's environment variable
+        get_process_manager().current().read().env(key)
     })
 }
 

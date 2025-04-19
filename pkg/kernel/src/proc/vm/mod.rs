@@ -38,9 +38,32 @@ impl ProcessVm {
     }
 
     pub fn init_proc_stack(&mut self, pid: ProcessId) -> VirtAddr {
+
+        // 在本次实验中，笔者带领大家做一个临时的、取巧的实现：根据进程的 PID 来为进程分配对应的栈空间。
+        // 也即，对于 PID 为 3 的进程，它的栈空间比 PID 为 2 的进程的栈空间具有 4GiB 的偏移。
         // FIXME: calculate the stack for pid
-        // FIXME: calculate the stack for pid
-        stack_top_addr
+        debug!("{}", pid.0);
+        // 计算栈底和栈顶地址
+        let stack_top = STACK_INIT_TOP - (pid.0 as u64 - 1) * STACK_MAX_SIZE;
+        // let stack_bottom = stack_top - STACK_MAX_SIZE;
+        let stack_bottom = STACK_INIT_BOT - (pid.0 as u64 - 1) * STACK_MAX_SIZE;
+
+        // 获取页表映射器和帧分配器
+        let mapper = &mut self.page_table.mapper();
+        let frame_allocator = &mut *get_frame_alloc_for_sure();
+
+        // 映射栈空间
+        // 初始是4KB
+        elf::map_range(
+            stack_bottom,
+            STACK_DEF_PAGE, // 页数
+            mapper,
+            frame_allocator,
+        )
+        .expect("Failed to map stack range");
+
+        // 返回栈顶地址
+        VirtAddr::new(stack_top)
     }
 
     pub fn handle_page_fault(&mut self, addr: VirtAddr) -> bool {
