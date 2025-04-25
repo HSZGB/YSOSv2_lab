@@ -77,11 +77,8 @@ impl ProcessManager {
     pub fn switch_next(&self, context: &mut ProcessContext) -> ProcessId {
 
         // 如何使这一函数的功能仅限于“切换到下一个进程”
-        //
 
         let mut ready_queue = self.ready_queue.lock();
-        
-        // 死循环了这里
 
         // FIXME: fetch the next process from ready queue
         // FIXME: check if the next process is ready,
@@ -108,7 +105,7 @@ impl ProcessManager {
         proc_data: Option<ProcessData>,
     ) -> ProcessId {
         let kproc = self.get_proc(&KERNEL_PID).unwrap();
-        let page_table = kproc.read().clone_page_table();
+        let page_table = kproc.read().clone_page_table(); // 内存空间和内核是共享的
         let proc_vm = Some(ProcessVm::new(page_table));
         let proc = Process::new(name, Some(Arc::downgrade(&kproc)), proc_vm, proc_data);
 
@@ -136,7 +133,13 @@ impl ProcessManager {
     pub fn handle_page_fault(&self, addr: VirtAddr, err_code: PageFaultErrorCode) -> bool {
         // FIXME: handle page fault
 
-        false
+        // 越权访问
+        if err_code.contains(PageFaultErrorCode::PROTECTION_VIOLATION) {
+            warn!("Page fault: writing to address {:#x}", addr);
+            return false;
+        }
+
+        return self.current().write().handle_page_fault(addr);
     }
 
     pub fn kill(&self, pid: ProcessId, ret: isize) {

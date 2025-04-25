@@ -42,7 +42,7 @@ impl ProcessVm {
         // 在本次实验中，笔者带领大家做一个临时的、取巧的实现：根据进程的 PID 来为进程分配对应的栈空间。
         // 也即，对于 PID 为 3 的进程，它的栈空间比 PID 为 2 的进程的栈空间具有 4GiB 的偏移。
         // FIXME: calculate the stack for pid
-        debug!("{}", pid.0);
+        // debug!("{}", pid.0);
         // 计算栈底和栈顶地址
         let stack_top = STACK_INIT_TOP - (pid.0 as u64 - 1) * STACK_MAX_SIZE;
         // let stack_bottom = stack_top - STACK_MAX_SIZE;
@@ -61,6 +61,12 @@ impl ProcessVm {
             frame_allocator,
         )
         .expect("Failed to map stack range");
+        
+        // init for stack
+        self.stack = stack::Stack::new(
+            Page::containing_address(VirtAddr::new(stack_top)),
+            STACK_DEF_PAGE,
+        );
 
         // 返回栈顶地址
         VirtAddr::new(stack_top)

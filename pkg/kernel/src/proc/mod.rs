@@ -54,14 +54,20 @@ pub fn init() {
 
 pub fn switch(context: &mut ProcessContext) {
     x86_64::instructions::interrupts::without_interrupts(|| {
+        // 如果当前的在Running，改变状态，扔进队列
+        // 如果似了或阻塞了，不扔进ready_queue
+        
         // FIXME: switch to the next process
         //      - save current process's context && update status
         let manager = get_process_manager();
-        manager.save_current(context);
-        
-        //      - handle ready queue update
-        manager.push_ready(get_pid()); // ??
-        
+        let proc = manager.current();
+
+        if proc.read().status() == ProgramStatus::Running {
+            manager.save_current(context); // 这里会改变成ready
+            //      - handle ready queue update
+            manager.push_ready(get_pid());
+        }
+
         //      - restore next process's context
         manager.switch_next(context);
         // debug!("hello");

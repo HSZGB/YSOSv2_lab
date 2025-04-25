@@ -105,6 +105,26 @@ impl Stack {
         debug_assert!(self.is_on_stack(addr), "Address is not on stack.");
 
         // FIXME: grow stack for page fault
+        
+        // 获取触发缺页异常的页面
+        let fault_page = Page::<Size4KiB>::containing_address(addr);
+
+        // 获取当前栈的底部页面
+        let current_bottom_page = Page::<Size4KiB>::containing_address(self.range.start.start_address());
+
+        // 计算需要分配的页面范围
+        let page_range = Page::range_inclusive(fault_page, current_bottom_page - 1);
+
+        // 调用 elf::map_range 分配和映射页面
+        elf::map_range(
+            page_range.start.start_address().as_u64(),
+            page_range.count() as u64,
+            mapper,
+            alloc,
+        )?;
+
+        self.range.start = fault_page;
+        self.usage += page_range.count() as u64;
 
         Ok(())
     }
