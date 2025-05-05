@@ -6,7 +6,8 @@ pub use uefi::data_types::*;
 pub use uefi::proto::console::gop::{GraphicsOutput, ModeInfo};
 pub use uefi::Status;
 
-use arrayvec::ArrayVec;
+use arrayvec::{ArrayString, ArrayVec};
+use xmas_elf::ElfFile;
 use core::ptr::NonNull;
 use x86_64::registers::control::Cr3;
 use x86_64::structures::paging::{OffsetPageTable, PageTable};
@@ -24,6 +25,20 @@ extern crate log;
 
 pub type MemoryMap = ArrayVec<MemoryDescriptor, 256>;
 
+/// 最大用户程序数量
+pub const MAX_APPS: usize = 16;
+
+/// App information
+pub struct App<'a> {
+    /// The name of app
+    pub name: ArrayString<MAX_APPS>,
+    /// The ELF file
+    pub elf: ElfFile<'a>,
+}
+
+pub type AppList = ArrayVec<App<'static>, MAX_APPS>;
+pub type AppListRef = Option<&'static AppList>;
+
 /// This structure represents the information that the bootloader passes to the kernel.
 pub struct BootInfo {
     /// The memory map
@@ -34,6 +49,9 @@ pub struct BootInfo {
 
     /// The system table virtual address
     pub system_table: NonNull<core::ffi::c_void>,
+
+    // Loaded apps
+    pub loaded_apps: Option<AppList>,
 }
 
 /// Get current page table from CR3

@@ -174,6 +174,10 @@ impl ProcessInner {
     pub fn init_stack_frame(&mut self, entry: VirtAddr, stack_top: VirtAddr) {
         self.context.init_stack_frame(entry, stack_top);
     }
+
+    pub fn load_elf(&mut self, elf: &ElfFile) {
+        self.vm_mut().load_elf(elf);
+    }
 }
 
 impl core::ops::Deref for Process {

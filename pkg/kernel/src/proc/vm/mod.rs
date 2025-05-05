@@ -3,6 +3,7 @@ use x86_64::{
     structures::paging::{page::*, *},
     VirtAddr,
 };
+use xmas_elf::ElfFile;
 
 use crate::{humanized_size, memory::*};
 
@@ -81,6 +82,24 @@ impl ProcessVm {
 
     pub(super) fn memory_usage(&self) -> u64 {
         self.stack.memory_usage()
+    }
+    
+    pub fn load_elf(&mut self, elf: &ElfFile) {
+        let mapper = &mut self.page_table.mapper();
+        let alloc = &mut *get_frame_alloc_for_sure();
+    
+        self.stack.init(mapper, alloc);
+    
+        // FIXME: load elf to process pagetable
+        elf::load_elf(
+            elf,
+            *PHYSICAL_OFFSET.get().unwrap(), 
+            mapper,
+            alloc,
+            true,
+        );
+
+        self.stack.init(mapper, alloc);
     }
 }
 
