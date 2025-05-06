@@ -21,3 +21,4 @@ linked_list_allocator = { workspace = true }
 volatile = { workspace = true }
 elf = {workspace = true}
 xmas-elf = { workspace = true }
+syscall_def = { workspace = true }

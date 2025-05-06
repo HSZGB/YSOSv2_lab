@@ -6,6 +6,7 @@ mod regs;
 // pub mod clock;
 pub mod func;
 pub mod logger;
+pub mod resource;
 
 use alloc::format;
 pub use macros::*;

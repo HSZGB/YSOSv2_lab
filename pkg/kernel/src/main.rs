@@ -20,4 +20,7 @@ pub fn spawn_init() -> proc::ProcessId {
 
     proc::list_app();
     proc::spawn("sh").unwrap()
+    // proc::spawn("testforpage").unwrap()
+    // proc::spawn("hello").unwrap()
+    // loop{}
 }

@@ -9,6 +9,7 @@ fn main() -> isize {
     println!("Hello, world!!!");
 
     233
+    // sys_exit(233)
 }
 
 entry!(main);

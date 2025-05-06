@@ -344,6 +344,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "ysos_fac"
+version = "0.4.0"
+dependencies = [
+ "yslib",
+]
+
+[[package]]
 name = "ysos_hello"
 version = "0.4.0"
 dependencies = [
@@ -370,6 +377,14 @@ dependencies = [
  "xmas-elf",
  "ysos_boot",
  "ysos_elf",
+ "ysos_syscall",
+]
+
+[[package]]
+name = "ysos_shell"
+version = "0.4.0"
+dependencies = [
+ "yslib",
 ]
 
 [[package]]
@@ -377,6 +392,13 @@ name = "ysos_syscall"
 version = "0.4.0"
 dependencies = [
  "num_enum",
+]
+
+[[package]]
+name = "ysos_testforpage"
+version = "0.4.0"
+dependencies = [
+ "yslib",
 ]
 
 [[package]]

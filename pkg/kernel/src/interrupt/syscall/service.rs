@@ -1,5 +1,7 @@
 use core::alloc::Layout;
 
+use crate::proc;
+use crate::proc::manager::get_process_manager;
 use crate::proc::*;
 use crate::utils::*;
 
@@ -13,7 +15,16 @@ pub fn spawn_process(args: &SyscallArgs) -> usize {
     // FIXME: handle spawn error, return 0 if failed
     // FIXME: return pid as usize
 
-    0
+    let app_name = unsafe {
+        core::str::from_utf8_unchecked(
+            core::slice::from_raw_parts(args.arg0 as *const u8, args.arg1 as usize),
+        )
+    };
+
+    match proc::spawn(app_name) {
+        Some(pid) => pid.0 as usize,  // 成功启动进程，返回进程 ID
+        None => 0,  // 进程启动失败，返回 0 表示失败
+    }
 }
 
 pub fn sys_write(args: &SyscallArgs) -> usize {
@@ -22,21 +33,47 @@ pub fn sys_write(args: &SyscallArgs) -> usize {
     // FIXME: call proc::write -> isize
     // FIXME: return the result as usize
 
-    0
+    let fd = args.arg0 as u8;
+    let buf = unsafe { core::slice::from_raw_parts(args.arg1 as *const u8, args.arg2) };
+
+    let written = proc::write(fd, buf);
+    written as usize
+    // 0
 }
 
 pub fn sys_read(args: &SyscallArgs) -> usize {
     // FIXME: just like sys_write
+    let fd = args.arg0 as u8;
+    let buf = unsafe {
+        core::slice::from_raw_parts_mut(args.arg1 as *mut u8, args.arg2)
+    };
 
-    0
+    let read = proc::read(fd, buf);
+    read as usize
+}
+
+pub fn get_pid() -> u16 {
+    get_process_manager().current().pid().0 as u16
+}
+
+pub fn sys_wait_pid(args: &SyscallArgs) -> isize {
+    let pid = ProcessId(args.arg0 as u16);
+
+    if let Some(code) = get_process_manager().get_exit_code(pid) {
+        code // 已退出，返回退出码
+    } else {
+        23333   // 未退出，返回约定值（例如 23333）
+    }
 }
 
 pub fn exit_process(args: &SyscallArgs, context: &mut ProcessContext) {
     // FIXME: exit process with retcode
+    proc::exit(args.arg0 as isize, context)
 }
 
 pub fn list_process() {
     // FIXME: list all processes
+    proc::print_process_list();
 }
 
 pub fn sys_allocate(args: &SyscallArgs) -> usize {

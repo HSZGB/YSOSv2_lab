@@ -52,6 +52,8 @@ impl ProcessManager {
         self.app_list
     }
 
+    
+
     #[inline]
     pub fn push_ready(&self, pid: ProcessId) {
         self.ready_queue.lock().push_back(pid);
@@ -63,7 +65,7 @@ impl ProcessManager {
     }
 
     #[inline]
-    fn get_proc(&self, pid: &ProcessId) -> Option<Arc<Process>> {
+    pub fn get_proc(&self, pid: &ProcessId) -> Option<Arc<Process>> {
         self.processes.read().get(pid).cloned()
     }
 
@@ -147,6 +149,8 @@ impl ProcessManager {
         let mut inner = proc.write();
         // FIXME: load elf to process pagetable
         inner.load_elf(elf);
+
+        debug!("load elf success.");
 
         // FIXME: alloc new stack for process
         inner.init_stack_frame(VirtAddr::new_truncate(elf.header.pt2.entry_point()), VirtAddr::new_truncate(STACK_INIT_TOP));

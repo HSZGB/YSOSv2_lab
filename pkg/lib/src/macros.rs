@@ -8,7 +8,7 @@ macro_rules! entry {
         pub extern "C" fn __impl_start() {
             let ret = $fn();
             // FIXME: after syscall, add lib::sys_exit(ret);
-            loop {}
+            lib::sys_exit(ret);
         }
     };
 }
@@ -33,5 +33,5 @@ fn panic(info: &core::panic::PanicInfo) -> ! {
     );
 
     // FIXME: after syscall, add lib::sys_exit(1);
-    loop {}
+    super::sys_exit(1);
 }

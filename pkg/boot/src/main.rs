@@ -88,7 +88,8 @@ fn efi_main() -> Status {
             _ => config.kernel_stack_auto_grow / 4096
         },
         &mut page_table,
-        &mut UEFIFrameAllocator
+        &mut UEFIFrameAllocator,
+        false
     );
 
     // FIXME: recover write protect (Cr0)

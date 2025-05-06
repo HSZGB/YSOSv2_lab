@@ -47,6 +47,7 @@ pub fn init(boot_info: &'static BootInfo) {
     memory::allocator::init(); // init kernel heap allocator
     interrupt::init(); // init interrupts
     memory::init(boot_info); // init memory manager
+    memory::user::init(); // init user heap allocator
     proc::init(boot_info); // init process manager
     x86_64::instructions::interrupts::enable();
     info!("Interrupts Enabled.");
@@ -57,4 +58,15 @@ pub fn init(boot_info: &'static BootInfo) {
 pub fn shutdown() -> ! {
     info!("YatSenOS shutting down.");
     uefi::runtime::reset(ResetType::SHUTDOWN, Status::SUCCESS, None);
+}
+
+pub fn wait(init: proc::ProcessId) {
+    loop {
+        if proc::still_alive(init) {
+            // Why? Check reflection question 5
+            x86_64::instructions::hlt();
+        } else {
+            break;
+        }
+    }
 }

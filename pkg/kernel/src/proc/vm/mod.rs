@@ -60,6 +60,7 @@ impl ProcessVm {
             STACK_DEF_PAGE, // 页数
             mapper,
             frame_allocator,
+            false
         )
         .expect("Failed to map stack range");
         
@@ -88,8 +89,6 @@ impl ProcessVm {
         let mapper = &mut self.page_table.mapper();
         let alloc = &mut *get_frame_alloc_for_sure();
     
-        self.stack.init(mapper, alloc);
-    
         // FIXME: load elf to process pagetable
         elf::load_elf(
             elf,
@@ -100,6 +99,7 @@ impl ProcessVm {
         );
 
         self.stack.init(mapper, alloc);
+        // 
     }
 }
 

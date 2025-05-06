@@ -17,8 +17,34 @@ impl Stdin {
         //       - maybe char by char?
         // FIXME: handle backspace / enter...
         // FIXME: return string
+        let mut buf = String::new();
+        let mut char_buf = [0u8; 1];
+        loop {
+            if let Some(n) = sys_read(0, &mut char_buf) {
+                if n == 0 {
+                    continue;
+                }
+                let ch = char_buf[0] as char;
+                match ch {
+                    '\n' | '\r' => {
+                        self::print!("\n");
+                        break;
+                    }
+                    '\x08' | '\x7f' => {
+                        if !buf.is_empty() {
+                            self::print!("\x08\x20\x08");
+                            buf.pop();
+                        }
+                    }
+                    _ => {
+                        buf.push(ch);
+                        self::print!("{}", ch);
+                    }
+                }
+            }
+        }
 
-        String::new()
+        buf
     }
 }
 

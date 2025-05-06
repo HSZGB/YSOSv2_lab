@@ -4,7 +4,8 @@ pub fn init() {
     static LOGGER: Logger = Logger;
     log::set_logger(&LOGGER).unwrap();
     // FIXME: Configure the logger
-    set_max_level(LevelFilter::Trace);
+    // set_max_level(LevelFilter::Trace);
+    set_max_level(LevelFilter::Info);
 
     info!("Logger Initialized.");
     // panic!("panic test");
