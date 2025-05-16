@@ -44,7 +44,7 @@ impl ProcessVm {
         // 也即，对于 PID 为 3 的进程，它的栈空间比 PID 为 2 的进程的栈空间具有 4GiB 的偏移。
         // FIXME: calculate the stack for pid
         // debug!("{}", pid.0);
-        // 计算栈底和栈顶地址
+        // 计算栈的底部地址和顶部地址
         let stack_top = STACK_INIT_TOP - (pid.0 as u64 - 1) * STACK_MAX_SIZE;
         // let stack_bottom = stack_top - STACK_MAX_SIZE;
         let stack_bottom = STACK_INIT_BOT - (pid.0 as u64 - 1) * STACK_MAX_SIZE;
@@ -70,7 +70,7 @@ impl ProcessVm {
             STACK_DEF_PAGE,
         );
 
-        // 返回栈顶地址
+        // 初始的栈顶位置
         VirtAddr::new(stack_top)
     }
 
@@ -100,6 +100,19 @@ impl ProcessVm {
 
         self.stack.init(mapper, alloc);
         // 
+    }
+
+    pub fn fork(&self, stack_offset_count: u64) -> Self {
+        // clone the page table context (see instructions)
+        let owned_page_table = self.page_table.fork();
+
+        let mapper = &mut owned_page_table.mapper();
+        let alloc = &mut *get_frame_alloc_for_sure();
+
+        Self {
+            page_table: owned_page_table,
+            stack: self.stack.fork(mapper, alloc, stack_offset_count),
+        }
     }
 }
 

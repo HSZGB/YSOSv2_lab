@@ -56,6 +56,10 @@ pub fn get_pid() -> u16 {
     get_process_manager().current().pid().0 as u16
 }
 
+pub fn sys_fork(context: &mut ProcessContext) {
+    proc::fork(context);
+}
+
 pub fn sys_wait_pid(args: &SyscallArgs) -> isize {
     let pid = ProcessId(args.arg0 as u16);
 

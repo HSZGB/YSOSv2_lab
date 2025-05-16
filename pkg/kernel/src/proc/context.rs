@@ -33,6 +33,11 @@ impl ProcessContext {
     }
 
     #[inline]
+    pub fn set_stack_offset(&mut self, offset: u64) {
+        self.value.stack_frame.stack_pointer += offset;
+    }
+
+    #[inline]
     pub fn save(&mut self, context: &ProcessContext) {
         self.value = context.as_ref().as_ptr().read();
     }

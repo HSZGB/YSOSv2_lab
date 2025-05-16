@@ -8,7 +8,8 @@ extern crate lib;
 fn main() -> isize {
     println!("YatSenOS Shell 启动");
     loop {
-        print!("shell> ");
+        // print!("shell> ");
+        print!("\x1b[32m[>]\x1b[0m");
         let input = stdin().read_line();
         let cmd = input.trim();
         
@@ -30,6 +31,10 @@ fn main() -> isize {
                 let pid = sys_spawn("fac");
                 sys_wait_pid(pid);
             },
+            "run forktest" => {
+                let pid = sys_spawn("forktest");
+                sys_wait_pid(pid);
+            },
             "clear" => print!("\x1b[2J\x1b[H"),
             "help" => show_help(),
             "" => continue, // 空命令不做任何处理
@@ -48,6 +53,7 @@ fn show_help() {
     println!("  hello        - 运行 hello 程序");
     println!("  run hello    - 运行 hello 程序");
     println!("  run fac      - 运行阶乘计算程序");
+    println!("  run forktest - 运行 fork 测试程序");
     println!("  clear        - 清空屏幕");
     println!("  help         - 显示此帮助信息");
     println!("\x1b[33m================================================\x1b[0m");

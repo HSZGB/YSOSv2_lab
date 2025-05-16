@@ -170,6 +170,20 @@ impl ProcessManager {
         pid
     }
 
+    pub fn fork(&self) {
+        // FIXME: get current process
+        let current = self.current();
+
+        // FIXME: fork to get child
+        let child_proc = current.fork();
+        
+        // FIXME: add child to process list
+        self.add_proc(child_proc.pid(), child_proc.clone());
+        self.push_ready(child_proc.pid());
+
+        // FOR DBG: maybe print the process ready queue?
+    }
+
     pub fn kill_current(&self, ret: isize) {
         self.kill(processor::get_pid(), ret);
     }

@@ -175,6 +175,25 @@ pub fn exit(ret: isize, context: &mut ProcessContext) {
     })
 }
 
+pub fn fork(context: &mut ProcessContext) {
+    x86_64::instructions::interrupts::without_interrupts(|| {
+        let manager = get_process_manager();
+        // FIXME: save_current as parent
+        manager.save_current(context);
+
+        // FIXME: fork to get child
+        manager.fork();
+
+        // FIXME: push to child & parent to ready queue
+        // child在manager中push进去
+        let parent_pid = manager.current().pid();
+        manager.push_ready(parent_pid);
+
+        // FIXME: switch to next process
+        manager.switch_next(context);
+    })
+}
+
 #[inline]
 pub fn still_alive(pid: ProcessId) -> bool {
     x86_64::instructions::interrupts::without_interrupts(|| {

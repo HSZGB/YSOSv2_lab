@@ -12,15 +12,6 @@ pub unsafe fn register_idt(idt: &mut InterruptDescriptorTable) {
         .set_stack_index(gdt::CLOCK_INTERRUPT_IST_INDEX);
 }
 
-// pub extern "x86-interrupt" fn clock_handler(_sf: InterruptStackFrame) {
-//     x86_64::instructions::interrupts::without_interrupts(|| {
-//         if inc_counter() % 0x10000 == 0 {
-//             // info!("Tick! @{}", read_counter());
-//         }
-//         super::ack();
-//     });
-// }
-
 pub extern "C" fn clock(mut context: ProcessContext) {
     // debug!("Timer interrupt triggered");
     

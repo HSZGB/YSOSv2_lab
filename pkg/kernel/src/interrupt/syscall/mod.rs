@@ -49,6 +49,10 @@ pub fn dispatcher(context: &mut ProcessContext) {
     // trace!("{}", args);
 
     match args.syscall {
+        // 注释说明:
+        // 前面是传入的参数，其中None表示没有传入参数
+        // 后面是返回值
+
         // fd: arg0 as u8, buf: &[u8] (ptr: arg1 as *const u8, len: arg2)
         /* FIXME: read from fd & return length */
         Syscall::Read => context.set_rax(sys_read(&args)), 
@@ -60,6 +64,9 @@ pub fn dispatcher(context: &mut ProcessContext) {
         // None -> pid: u16
         /* FIXME: get current pid */
         Syscall::GetPid => context.set_rax(get_pid() as usize),
+
+        // None -> pid: u16 or 0 or -1
+        Syscall::Fork => sys_fork(context),
 
         // path: &str (ptr: arg0 as *const u8, len: arg1) -> pid: u16
         /* FIXME: spawn process from name */

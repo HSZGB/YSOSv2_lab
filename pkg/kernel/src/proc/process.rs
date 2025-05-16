@@ -74,6 +74,28 @@ impl Process {
         })
     }
 
+    pub fn fork(self: &Arc<Self>) -> Arc<Self> {
+        // FIXME: lock inner as write
+        let mut inner = self.inner.write();
+        // FIXME: inner fork with parent weak ref
+        let parent_weak = Arc::downgrade(self);
+        let child_pid = ProcessId::new();
+        let child_inner = inner.fork(parent_weak);
+
+        // FOR DBG: maybe print the child process info
+        //          e.g. parent, name, pid, etc.
+
+        // FIXME: make the arc of child
+        let child = Arc::new(Self{pid: child_pid, inner: Arc::new(RwLock::new(child_inner))});
+        // FIXME: add child to current process's children list
+        inner.children.push(child.clone());
+        // FIXME: set fork ret value for parent with `context.set_rax
+        inner.context.set_rax(child.pid.0 as usize);
+        // FIXME: mark the child as ready & return it
+        child.write().pause();
+        child
+    }
+
     pub fn kill(&self, ret: isize) {
         let mut inner = self.inner.write();
 
@@ -157,6 +179,38 @@ impl ProcessInner {
 
     pub fn parent(&self) -> Option<Arc<Process>> {
         self.parent.as_ref().and_then(|p| p.upgrade())
+    }
+
+    pub fn fork(&mut self, parent: Weak<Process>) -> ProcessInner {
+        // FIXME: fork the process virtual memory struct
+        let child_vm = self.vm().fork(self.children.len() as u64 + 1);
+        // FIXME: calculate the real stack offset
+        let offset = child_vm.stack.offset(&self.vm().stack);
+
+        // FIXME: update `rsp` in interrupt stack frame
+        // FIXME: set the return value 0 for child with `context.set_rax`
+
+        let mut child_context = self.context.clone();
+        child_context.set_stack_offset(offset);
+        child_context.set_rax(0);
+
+        // FIXME: clone the process data struct
+
+        // FIXME: construct the child process inner
+
+        Self {
+            name: self.name.clone(),
+            parent: Some(parent),
+            children: Vec::new(),
+            ticks_passed: 0,
+            status: ProgramStatus::Ready,
+            context: child_context,
+            exit_code: None,
+            proc_data: self.proc_data.clone(),
+            proc_vm: Some(child_vm),
+        }
+
+        // NOTE: return inner because there's no pid record in inner
     }
 
     pub fn kill(&mut self, ret: isize) {
