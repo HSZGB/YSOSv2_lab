@@ -9,7 +9,7 @@ fn main() -> isize {
     println!("YatSenOS Shell 启动");
     loop {
         // print!("shell> ");
-        print!("\x1b[32m[>]\x1b[0m");
+        print!("\x1b[32m[>]\x1b[0m ");
         let input = stdin().read_line();
         let cmd = input.trim();
         
@@ -33,6 +33,10 @@ fn main() -> isize {
             },
             "run forktest" => {
                 let pid = sys_spawn("forktest");
+                sys_wait_pid(pid);
+            },
+            "run sh" => {
+                let pid = sys_spawn("sh");
                 sys_wait_pid(pid);
             },
             "clear" => print!("\x1b[2J\x1b[H"),
