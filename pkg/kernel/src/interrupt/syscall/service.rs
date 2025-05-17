@@ -60,14 +60,9 @@ pub fn sys_fork(context: &mut ProcessContext) {
     proc::fork(context);
 }
 
-pub fn sys_wait_pid(args: &SyscallArgs) -> isize {
+pub fn sys_wait_pid(args: &SyscallArgs, context: &mut ProcessContext) {
     let pid = ProcessId(args.arg0 as u16);
-
-    if let Some(code) = get_process_manager().get_exit_code(pid) {
-        code // 已退出，返回退出码
-    } else {
-        23333   // 未退出，返回约定值（例如 23333）
-    }
+    proc::wait_pid(pid, context);
 }
 
 pub fn exit_process(args: &SyscallArgs, context: &mut ProcessContext) {
