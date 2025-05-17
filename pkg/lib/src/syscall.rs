@@ -34,13 +34,14 @@ pub fn sys_read(fd: u8, buf: &mut [u8]) -> Option<usize> {
 pub fn sys_wait_pid(pid: u16) -> isize {
     // FIXME: try to get the return value for process
     //        loop until the process is finished
-    loop {
-        let ret = syscall!(Syscall::WaitPid, pid as u64);
-        if ret != 23333 {
-            return ret as isize;
-            // return 0;
-        }
-    }
+    // loop {
+    //     let ret = syscall!(Syscall::WaitPid, pid as u64);
+    //     if ret != 23333 {
+    //         return ret as isize;
+    //         // return 0;
+    //     }
+    // }
+    syscall!(Syscall::WaitPid, pid as u64) as isize
 }
 
 #[inline(always)]
