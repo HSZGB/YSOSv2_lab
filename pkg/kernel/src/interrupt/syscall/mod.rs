@@ -80,6 +80,9 @@ pub fn dispatcher(context: &mut ProcessContext) {
         /* FIXME: check if the process is running or get retcode */
         Syscall::WaitPid => sys_wait_pid(&args, context),
 
+        // op: u8, key: u32, val: usize -> ret: any
+        Syscall::Sem => sys_sem(&args, context),
+
         // None
         // { /* FIXME: list processes */ },
         Syscall::Stat => list_process(),
