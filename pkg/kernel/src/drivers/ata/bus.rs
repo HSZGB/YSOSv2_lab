@@ -140,7 +140,15 @@ impl AtaBus {
             // FIXME: store the LBA28 address into four 8-bit registers
             //      - read the documentation for more information
             //      - enable LBA28 mode by setting the drive register
+
+            self.lba_low.write(bytes[0]);
+            self.lba_mid.write(bytes[1]);
+            self.lba_high.write(bytes[2]);
+            self.drive.write((drive << 4) | 0xE0 | (bytes[3] & 0x0F)); // set drive and enable LBA28
+            // 传入的drive应该是表示的是主盘(0)还是从盘(1)（一开始看不懂）
+
             // FIXME: write the command register (cmd as u8)
+            self.command.write(cmd as u8);
         }
 
         if self.status().is_empty() {
@@ -149,6 +157,7 @@ impl AtaBus {
         }
 
         // FIXME: poll for the status to be not BUSY
+        self.poll(AtaStatus::BUSY, false);
 
         if self.is_error() {
             warn!("ATA error: {:?} command error", cmd);
@@ -157,6 +166,8 @@ impl AtaBus {
         }
 
         // FIXME: poll for the status to be not BUSY and DATA_REQUEST_READY
+        self.poll(AtaStatus::BUSY, false);
+        self.poll(AtaStatus::DATA_REQUEST_READY, true);
 
         Ok(())
     }
@@ -172,7 +183,15 @@ impl AtaBus {
         //      - if the status is empty, return `AtaDeviceType::None`
         //      - else return `DeviceError::Unknown` as `FsError`
 
+        if self.write_command(drive, 0, AtaCommand::IdentifyDevice).is_err() {
+            if self.status().is_empty() {
+                return Ok(AtaDeviceType::None);
+            } else {
+                return Err(storage::DeviceError::Unknown.into());
+            }
+        }
         // FIXME: poll for the status to be not BUSY
+        self.poll(AtaStatus::BUSY, false);
 
         Ok(match (self.cylinder_low(), self.cylinder_high()) {
             // we only support PATA drives
@@ -202,6 +221,13 @@ impl AtaBus {
         //      - use `self.read_data()`
         //      - ! pay attention to data endianness
 
+        buf.chunks_mut(2)
+            .for_each(|chunk| {
+                let data = self.read_data();
+                chunk[0] = (data & 0xFF) as u8; // lower byte
+                chunk[1] = (data >> 8) as u8; // upper byte
+            });
+
         if self.is_error() {
             debug!("ATA error: data read error");
             self.debug();
@@ -222,6 +248,12 @@ impl AtaBus {
         //      - use `buf.chunks(2)`
         //      - use `self.write_data()`
         //      - ! pay attention to data endianness
+
+        buf.chunks(2)
+            .for_each(|chunk| {
+                let data = u16::from_le_bytes([chunk[0], chunk[1]]);
+                self.write_data(data);
+            });
 
         if self.is_error() {
             debug!("ATA error: data write error");
