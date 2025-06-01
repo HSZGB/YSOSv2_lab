@@ -1,5 +1,6 @@
 use alloc::{collections::btree_map::BTreeMap, string::String};
 use spin::Mutex;
+use storage::FileHandle;
 
 use crate::input::try_pop_key;
 
@@ -61,6 +62,7 @@ impl ResourceSet {
 pub enum Resource {
     Console(StdIO),
     Null,
+    File(FileHandle),
 }
 
 impl Resource {
@@ -80,6 +82,13 @@ impl Resource {
                 _ => None,
             },
             Resource::Null => Some(0),
+            Resource::File(file) => {
+                // Read from file handle
+                match file.read(buf) {
+                    Ok(count) => Some(count),   
+                    Err(_) => None,
+                }
+            }
         }
     }
 
@@ -97,6 +106,7 @@ impl Resource {
                 }
             },
             Resource::Null => Some(buf.len()),
+            Resource::File(_) => unimplemented!("Writing to file handle is not implemented yet"),
         }
     }
 }

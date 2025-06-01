@@ -117,3 +117,38 @@ pub fn sys_deallocate(args: &SyscallArgs) {
             .deallocate(core::ptr::NonNull::new_unchecked(ptr), *layout);
     }
 }
+
+pub fn list_dir(args: &SyscallArgs) {
+    let root = unsafe {
+        core::str::from_utf8_unchecked(core::slice::from_raw_parts(
+            args.arg0 as *const u8,
+            args.arg1,
+        ))
+    };
+    crate::drivers::filesystem::ls(root);
+}
+
+pub fn sys_open(args: &SyscallArgs) -> usize {
+    let path = unsafe {
+        core::str::from_utf8_unchecked(core::slice::from_raw_parts(
+            args.arg0 as *const u8,
+            args.arg1,
+        ))
+    };
+
+    match open(path) {
+        Some(fd) => fd as usize,  // 成功打开文件，返回文件描述符
+        None => 0,  // 打开文件失败，返回 0
+    }
+
+}
+
+pub fn sys_close(args: &SyscallArgs) -> usize {
+    let fd = args.arg0 as u8;
+
+    if crate::proc::close(fd) {
+        1  // 成功关闭文件，返回 1
+    } else {
+        0  // 关闭文件失败，返回 0
+    }
+}

@@ -75,6 +75,9 @@ where
 
         // FIXME: calculate the block offset for inner device
         // FIXME: read from the inner device
+        let block_offset = self.offset + offset;
+        self.inner.read_block(block_offset, block)
+        // todo!("Reading from partition is not implemented yet");
     }
 
     fn write_block(&self, offset: usize, block: &B) -> FsResult {
@@ -84,5 +87,8 @@ where
 
         // FIXME: calculate the block offset for inner device
         // FIXME: write to the inner device
+        // let block_offset = self.offset + offset * B::size();
+        // self.inner.write_block(block_offset, block)
+        todo!("Writing to partition is not implemented yet");
     }
 }

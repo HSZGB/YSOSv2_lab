@@ -1,5 +1,6 @@
 use super::ata::*;
 use alloc::boxed::Box;
+use alloc::format;
 use chrono::DateTime;
 use storage::fat16::Fat16;
 use storage::mbr::*;
@@ -47,4 +48,31 @@ pub fn ls(root_path: &str) {
     //      - add '/' to the end of directory names
     //      - format the date as you like
     //      - do not forget to print the table header
+    
+    println!("{:<15} {:>8} {:<10} {:<19}", "Name", "Size", "Type", "Modified");
+
+    for meta in iter {
+        let name = match meta.entry_type {
+            FileType::Directory => format!("{}/", meta.name),
+            FileType::File => meta.name.clone(),
+        };
+
+        let (size, unit) = crate::humanized_size_short(meta.len as u64);
+        let size_str = format!("{:.1}{}", size, unit);
+
+        let typ = match meta.entry_type {
+            FileType::Directory => "dir",
+            FileType::File => "file",
+        };
+
+        let modified= meta.modified
+            .map(|t| t.format("%Y/%m/%d %H:%M:%S"))
+            .unwrap_or(
+                DateTime::from_timestamp_millis(0)
+                    .unwrap()
+                    .format("%Y/%m/%d %H:%M:%S")
+            );
+
+        println!("{:<15} {:>8} {:<10} {:<19}", name, size_str, typ, modified);
+    }
 }

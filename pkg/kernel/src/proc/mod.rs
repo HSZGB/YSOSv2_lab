@@ -167,6 +167,14 @@ pub fn write(fd: u8, buf: &[u8]) -> isize {
     x86_64::instructions::interrupts::without_interrupts(|| get_process_manager().current().read().write(fd, buf))
 }
 
+pub fn open(path: &str) -> Option<u8> {
+    x86_64::instructions::interrupts::without_interrupts(|| get_process_manager().open(path))
+}
+
+pub fn close(fd: u8) -> bool {
+    x86_64::instructions::interrupts::without_interrupts(|| get_process_manager().close(fd))
+}
+
 pub fn exit(ret: isize, context: &mut ProcessContext) {
     x86_64::instructions::interrupts::without_interrupts(|| {
         let manager = get_process_manager();

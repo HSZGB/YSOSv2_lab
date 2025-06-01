@@ -1,11 +1,12 @@
 use super::*;
-use crate::{memory::{
+use crate::{filesystem::get_rootfs, memory::{
     self,
     allocator::{ALLOCATOR, HEAP_SIZE},
     get_frame_alloc_for_sure, PAGE_SIZE,
-}, proc::vm::stack::STACK_INIT_TOP};
+}, proc::vm::stack::STACK_INIT_TOP, resource::Resource};
 use alloc::{collections::*, format, sync::{Arc, Weak}};
 use spin::{Mutex, RwLock};
+use storage::FileSystem;
 
 pub static PROCESS_MANAGER: spin::Once<ProcessManager> = spin::Once::new();
 
@@ -286,6 +287,21 @@ impl ProcessManager {
         })
         // 如果该值为 None，则说明进程还没有退出
         // 如果该值为 Some，则说明进程已经退出，可以获取到进程的返回值。
+    }
+
+    pub fn open(&self, path: &str) -> Option<u8> {
+        let handle = match get_rootfs().open_file(path) {
+            Ok(handle) => handle,
+            Err(e) => {
+                warn!("Failed to open file '{}': {:?}", path, e);
+                return None;
+            }
+        };
+        Some(self.current().write().open(Resource::File(handle)))
+    }
+
+    pub fn close(&self, fd: u8) -> bool {
+        self.current().write().close(fd)
     }
 
 }

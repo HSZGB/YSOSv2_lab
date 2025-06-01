@@ -1,6 +1,6 @@
 use alloc::{collections::BTreeMap, sync::Arc};
 use spin::RwLock;
-use crate::resource::ResourceSet;
+use crate::resource::{Resource, ResourceSet};
 use x86_64::structures::paging::{
     page::{PageRange, PageRangeInclusive},
     Page,
@@ -45,6 +45,14 @@ impl ProcessData {
     
     pub fn write(&self, fd: u8, buf: &[u8]) -> isize {
         self.resources.read().write(fd, buf)
+    }
+
+    pub fn open(&mut self, res: Resource) -> u8 {
+        self.resources.write().open(res)
+    }
+
+    pub fn close(&mut self, fd: u8) -> bool {
+        self.resources.write().close(fd)
     }
 
     pub fn new_sem(&mut self, key: u32, value: usize) -> bool {

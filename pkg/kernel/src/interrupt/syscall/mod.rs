@@ -90,6 +90,12 @@ pub fn dispatcher(context: &mut ProcessContext) {
         // { /* FIXME: list available apps */},
         Syscall::ListApp => list_app(),
 
+        // path: &str (arg0 as *const u8, arg1 as len)
+        Syscall::ListDir => list_dir(&args),
+
+        Syscall::Open => context.set_rax(sys_open(&args)), 
+        Syscall::Close => context.set_rax(sys_close(&args)),
+
         // ----------------------------------------------------
         // NOTE: following syscall examples are implemented
         // ----------------------------------------------------
