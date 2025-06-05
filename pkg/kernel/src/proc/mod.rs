@@ -14,9 +14,12 @@ use alloc::vec::Vec;
 use manager::*;
 use process::*;
 use processor::get_pid;
+use storage::FileSystem;
 use sync::SemaphoreResult;
+use uefi::proto::debug;
 use vm::ProcessVm;
 use x86::current;
+use crate::filesystem::get_rootfs;
 use crate::memory::PAGE_SIZE;
 
 use alloc::string::{String, ToString};
@@ -143,6 +146,23 @@ pub fn spawn(name: &str) -> Option<ProcessId> {
     })?;
 
     elf_spawn(name.to_string(), &app.elf)
+}
+
+pub fn fs_spawn(path: &str) -> Option<ProcessId> {
+    debug!("Spawning app from path: {}", path);
+    let mut file = get_rootfs().open_file(path).expect("Failed to open app binary file");
+    // if file.is_directory().unwrap_or(true) {
+    //     continue;
+    // }
+
+    let mut buf = Vec::new(); // 64KB buffer
+    file.read_all(&mut buf).expect("Failed to read app binary file");
+    let elf = ElfFile::new(&buf).expect("Failed to parse ELF file");
+
+    // let name = file.metadata().name().to_string();
+    let name = "name not implemented".to_string(); // FIXME: get name from metadata
+
+    elf_spawn(name, &elf)
 }
 
 pub fn elf_spawn(name: String, elf: &ElfFile) -> Option<ProcessId> {

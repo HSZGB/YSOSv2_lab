@@ -15,13 +15,17 @@ pub fn spawn_process(args: &SyscallArgs) -> usize {
     // FIXME: handle spawn error, return 0 if failed
     // FIXME: return pid as usize
 
-    let app_name = unsafe {
+    let path = unsafe {
         core::str::from_utf8_unchecked(
             core::slice::from_raw_parts(args.arg0 as *const u8, args.arg1 as usize),
         )
     };
 
-    match proc::spawn(app_name) {
+    // match proc::spawn(app_name) {
+    //     Some(pid) => pid.0 as usize,  // 成功启动进程，返回进程 ID
+    //     None => 0,  // 进程启动失败，返回 0 表示失败
+    // }
+    match proc::fs_spawn(path) {
         Some(pid) => pid.0 as usize,  // 成功启动进程，返回进程 ID
         None => 0,  // 进程启动失败，返回 0 表示失败
     }
