@@ -59,39 +59,40 @@ impl Read for File {
         }
 
         let mut bytes_read = 0;
-        let mut buffer_offset = 0;
 
         while bytes_read < bytes_to_read {
             // 计算当前cluster内的偏移
             let cluster_size = self.handle.bpb.sectors_per_cluster() as usize * self.handle.bpb.bytes_per_sector() as usize;
             let offset_in_cluster = self.offset % cluster_size;
             
-            // 计算当前cluster中还能读取多少字节
-            let bytes_left_in_cluster = cluster_size - offset_in_cluster;
-            let bytes_to_read_from_cluster = (bytes_to_read - bytes_read).min(bytes_left_in_cluster);
+            // debug
+            let offset_in_sector = offset_in_cluster % self.handle.bpb.bytes_per_sector() as usize;
+            let bytes_left_in_sector = BLOCK_SIZE - offset_in_sector;
+            let bytes_to_read_from_sector = (bytes_to_read - bytes_read).min(bytes_left_in_sector).min(self.length() - self.offset);
 
             // 将cluster转换为sector
+            // 这个current_cluster是文件的起始cluster，还要算上偏移的
             let sector = self.handle.cluster_to_sector(&self.current_cluster);
+            let sector = sector + (offset_in_cluster / self.handle.bpb.bytes_per_sector() as usize);
             
             // 读取数据
-            let mut cluster_buffer = Block::default();
-            self.handle.inner.read_block(sector, &mut cluster_buffer)?;
+            let mut sector_buffer = Block::default();
+            self.handle.inner.read_block(sector, &mut sector_buffer)?;
             
             // 复制需要的数据到目标buffer
-            let src_start = offset_in_cluster;
-            let src_end = src_start + bytes_to_read_from_cluster;
-            let dst_start = buffer_offset;
-            let dst_end = dst_start + bytes_to_read_from_cluster;
+            let src_start = offset_in_sector;
+            let src_end = src_start + bytes_to_read_from_sector;
+            let dst_start = bytes_read;
+            let dst_end = dst_start + bytes_to_read_from_sector;
             
-            buf[dst_start..dst_end].copy_from_slice(&cluster_buffer[src_start..src_end]);
+            buf[dst_start..dst_end].copy_from_slice(&sector_buffer[src_start..src_end]);
             
             // 更新偏移量和已读字节数
-            self.offset += bytes_to_read_from_cluster;
-            bytes_read += bytes_to_read_from_cluster;
-            buffer_offset += bytes_to_read_from_cluster;
+            self.offset += bytes_to_read_from_sector;
+            bytes_read += bytes_to_read_from_sector;
             
             // 如果读完了当前cluster且还需要继续读取，则移动到下一个cluster
-            if offset_in_cluster + bytes_to_read_from_cluster == cluster_size && bytes_read < bytes_to_read {
+            if self.offset % cluster_size == 0 {
                 // 通过FAT表获取下一个cluster
                 // 检查是否到达文件末尾
                 if let Ok(next_cluster) = self.handle.next_cluster(&self.current_cluster) {
