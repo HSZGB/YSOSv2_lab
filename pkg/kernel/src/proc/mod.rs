@@ -159,8 +159,7 @@ pub fn fs_spawn(path: &str) -> Option<ProcessId> {
     file.read_all(&mut buf).expect("Failed to read app binary file");
     let elf = ElfFile::new(&buf).expect("Failed to parse ELF file");
 
-    // let name = file.metadata().name().to_string();
-    let name = "name not implemented".to_string(); // FIXME: get name from metadata
+    let name = file.meta.name.to_string();
 
     elf_spawn(name, &elf)
 }
