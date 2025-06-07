@@ -1,4 +1,5 @@
 use alloc::{format, vec::Vec};
+use boot::KernelPages;
 use x86_64::{
     structures::paging::{
         mapper::{CleanUp, UnmapError},
@@ -100,7 +101,10 @@ impl ProcessVm {
             elf::load_elf(elf, *PHYSICAL_OFFSET.get().unwrap(), mapper, alloc, true).unwrap();
 
         // FIXME: calculate code usage
-        self.code_usage = /* The code usage */;
+        self.code_usage = self.code.iter()
+            .map(|page_range| page_range.len() as u64)
+            .sum::<u64>()
+            * crate::memory::PAGE_SIZE as u64;
     }
 
     pub fn fork(&self, stack_offset_count: u64) -> Self {
@@ -135,6 +139,8 @@ impl ProcessVm {
         let mapper = &mut self.page_table.mapper();
         let dealloc = &mut *get_frame_alloc_for_sure();
 
+        let start_count = dealloc.frames_recycled();
+
         // FIXME: implement the `clean_up` function for `Stack`
         self.stack.clean_up(mapper, dealloc)?;
 
@@ -159,6 +165,14 @@ impl ProcessVm {
 
         // NOTE: maybe print how many frames are recycled
         //       **you may need to add some functions to `BootInfoFrameAllocator`**
+        let end_count = dealloc.frames_recycled();
+        debug!(
+            "Recycled {}({:.3} MiB) frames, {}({:.3} MiB) frames in total.",
+            end_count - start_count,
+            ((end_count - start_count) * 4) as f32 / 1024.0,
+            end_count,
+            (end_count * 4) as f32 / 1024.0
+        );
 
         Ok(())
     }
@@ -174,5 +188,13 @@ impl core::fmt::Debug for ProcessVm {
             .field("memory_usage", &format!("{} {}", size, unit))
             .field("page_table", &self.page_table)
             .finish()
+    }
+}
+
+impl Drop for ProcessVm {
+    fn drop(&mut self) {
+        if let Err(err) = self.clean_up() {
+            error!("Failed to clean up process memory: {:?}", err);
+        }
     }
 }
