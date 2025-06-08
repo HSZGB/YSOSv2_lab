@@ -60,21 +60,24 @@ impl ProcessVm {
     /// Initialize kernel vm
     ///
     /// NOTE: this function should only be called by the first process
-    // pub fn init_kernel_vm(mut self, pages: &KernelPages) -> Self {
-    //     // FIXME: record kernel code usage
-    //     self.code = /* The kernel pages */;
-    //     self.code_usage = /* The kernel code usage */;
+    pub fn init_kernel_vm(mut self, pages: &KernelPages) -> Self {
+        // FIXME: record kernel code usage
+        let mut size = 0;
+        let owned_pages = pages
+            .iter()
+            .map(|page| {
+                size += page.count();
+                *page
+            })
+            .collect();
 
-    //     self.stack = Stack::kstack();
+        self.code = owned_pages;
+        self.code_usage = size as u64 * PAGE_SIZE;
 
-    //     // ignore heap for kernel process as we don't manage it
-
-    //     self
-    // }
-
-    pub fn init_kernel_vm(mut self) -> Self {
-        // TODO: record kernel code usage
         self.stack = Stack::kstack();
+
+        // ignore heap for kernel process as we don't manage it
+
         self
     }
 

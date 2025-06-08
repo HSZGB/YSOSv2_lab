@@ -7,6 +7,7 @@ pub use uefi::proto::console::gop::{GraphicsOutput, ModeInfo};
 pub use uefi::Status;
 
 use arrayvec::{ArrayString, ArrayVec};
+use x86_64::structures::paging::page::PageRangeInclusive;
 use xmas_elf::ElfFile;
 use core::ptr::NonNull;
 use x86_64::registers::control::Cr3;
@@ -38,6 +39,7 @@ pub struct App<'a> {
 
 pub type AppList = ArrayVec<App<'static>, MAX_APPS>;
 pub type AppListRef = Option<&'static AppList>;
+pub type KernelPages = ArrayVec<PageRangeInclusive, 8>;
 
 /// This structure represents the information that the bootloader passes to the kernel.
 pub struct BootInfo {
@@ -52,6 +54,9 @@ pub struct BootInfo {
 
     // Loaded apps
     pub loaded_apps: Option<AppList>,
+
+    // Kernel pages
+    pub kernel_pages: KernelPages,
 }
 
 /// Get current page table from CR3
