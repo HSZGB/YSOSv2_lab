@@ -96,6 +96,8 @@ pub fn dispatcher(context: &mut ProcessContext) {
         Syscall::Open => context.set_rax(sys_open(&args)), 
         Syscall::Close => context.set_rax(sys_close(&args)),
 
+        Syscall::Brk => context.set_rax(sys_brk(&args)),
+
         // ----------------------------------------------------
         // NOTE: following syscall examples are implemented
         // ----------------------------------------------------

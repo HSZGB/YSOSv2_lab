@@ -1,5 +1,7 @@
 use core::alloc::Layout;
 
+use x86_64::VirtAddr;
+
 use crate::proc;
 use crate::proc::manager::get_process_manager;
 use crate::proc::*;
@@ -154,5 +156,17 @@ pub fn sys_close(args: &SyscallArgs) -> usize {
         1  // 成功关闭文件，返回 1
     } else {
         0  // 关闭文件失败，返回 0
+    }
+}
+
+pub fn sys_brk(args: &SyscallArgs) -> usize {
+    let new_heap_end = if args.arg0 == 0 {
+        None
+    } else {
+        Some(VirtAddr::new(args.arg0 as u64))
+    };
+    match brk(new_heap_end) {
+        Some(new_heap_end) => new_heap_end.as_u64() as usize,
+        None => !0,
     }
 }

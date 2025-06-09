@@ -240,6 +240,10 @@ impl ProcessInner {
     pub fn load_elf(&mut self, elf: &ElfFile) {
         self.vm_mut().load_elf(elf);
     }
+
+    pub fn brk(&self, addr: Option<VirtAddr>) -> Option<VirtAddr> {
+        self.vm().brk(addr)
+    }
 }
 
 impl core::ops::Deref for Process {
