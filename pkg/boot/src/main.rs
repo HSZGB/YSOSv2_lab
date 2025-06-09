@@ -71,22 +71,27 @@ fn efi_main() -> Status {
     );
 
     // FIXME: load and map the kernel elf file
-    elf::load_elf(
+    let pages = elf::load_elf(
         &elf,
         config.physical_memory_offset,
         &mut page_table,
         &mut UEFIFrameAllocator,
         false
-    );
+    ).unwrap();
 
     // FIXME: map kernel stack
+    let (stack_start, stack_size) = if config.kernel_stack_auto_grow > 0 {
+        let init_size = config.kernel_stack_auto_grow;
+        let bottom_offset = (config.kernel_stack_size - init_size) * 0x1000;
+        let init_bottom = config.kernel_stack_address + bottom_offset;
+        (init_bottom, init_size)
+    } else {
+        (config.kernel_stack_address, config.kernel_stack_size)
+    };
 
     elf::map_range(
-        config.kernel_stack_address,
-        match config.kernel_stack_auto_grow {
-            0 => config.kernel_stack_size,
-            _ => config.kernel_stack_auto_grow / 4096
-        },
+        stack_start,
+        stack_size,
         &mut page_table,
         &mut UEFIFrameAllocator,
         false
@@ -119,12 +124,18 @@ fn efi_main() -> Status {
     let mmap = unsafe { uefi::boot::exit_boot_services(MemoryType::LOADER_DATA) };
     // NOTE: alloc & log are no longer available
 
+    let mut kernel_pages = KernelPages::new();
+    for page_range in &pages {
+        kernel_pages.push(*page_range);
+    }
+    
     // construct BootInfo
     let bootinfo = BootInfo {
         memory_map: mmap.entries().copied().collect(),
         physical_memory_offset: config.physical_memory_offset,
         system_table,
         loaded_apps: apps,
+        kernel_pages
     };
 
     // align stack to 8 bytes

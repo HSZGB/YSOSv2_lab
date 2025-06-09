@@ -4,6 +4,8 @@ use x86_64::{
 };
 
 
+use crate::proc::{KERNEL_PID, processor};
+
 use super::{FrameAllocatorRef, MapperRef};
 use core::ptr::copy_nonoverlapping;
 
@@ -27,7 +29,7 @@ const STACK_INIT_TOP_PAGE: Page<Size4KiB> = Page::containing_address(VirtAddr::n
 // kernel stack
 pub const KSTACK_MAX: u64 = 0xffff_ff02_0000_0000;
 pub const KSTACK_DEF_BOT: u64 = KSTACK_MAX - STACK_MAX_SIZE;
-pub const KSTACK_DEF_PAGE: u64 = 512;
+pub const KSTACK_DEF_PAGE: u64 = 4; // 最小应该是4
 pub const KSTACK_DEF_SIZE: u64 = KSTACK_DEF_PAGE * crate::memory::PAGE_SIZE;
 
 pub const KSTACK_INIT_BOT: u64 = KSTACK_MAX - KSTACK_DEF_SIZE;
@@ -116,13 +118,23 @@ impl Stack {
         // 计算需要分配的页面范围
         let page_range = Page::range_inclusive(fault_page, current_bottom_page - 1);
 
+        let user_access = processor::get_pid() != KERNEL_PID;
+
+        if !user_access {
+            trace!("Growing stack for kernel process.");
+            info!("Page fault on kernel at {:#x}", addr);
+        } else {
+            trace!("Growing stack for user process.");
+            info!("Page fault on user at {:#x}", addr);
+        }
+
         // 调用 elf::map_range 分配和映射页面
         elf::map_range(
             page_range.start.start_address().as_u64(),
             page_range.count() as u64,
             mapper,
             alloc,
-            true // 有点男泵
+            user_access,
         )?;
 
         self.range.start = fault_page;
