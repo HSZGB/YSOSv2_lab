@@ -273,7 +273,10 @@ impl ProcessManager {
             .for_each(|p| output += format!("{}\n", p).as_str());
 
         // TODO: print memory usage of kernel heap
-        
+        let heap_used = ALLOCATOR.lock().used();
+        let heap_size = HEAP_SIZE;
+
+        output += &format_usage("Kernel", heap_used, heap_size);        
 
 
         let alloc = get_frame_alloc_for_sure();
